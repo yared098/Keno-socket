@@ -15,56 +15,59 @@ class PageTwo extends StatelessWidget {
         final width = MediaQuery.of(context).size.width;
         final isDesktop = width > 900;
 
-        Widget buildDrawnNumbersColumn() {
-          return Container(
-            width: isDesktop ? 120 : double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-            decoration: BoxDecoration(
-              color: Colors.green.shade800,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                children: drawnNumbers
-                    .map(
-                      (num) => Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.yellow.shade700,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              offset: const Offset(1, 2),
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '$num',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 22,
-                            color: Colors.black,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black38,
-                                offset: Offset(1, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
+       Widget buildDrawnNumbersGrid() {
+  return Container(
+    width: isDesktop ? 280 : double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.green.shade800,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: drawnNumbers.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 5,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1,
+      ),
+      itemBuilder: (context, index) {
+        final num = drawnNumbers[index];
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.yellow.shade700,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 4,
+                offset: const Offset(1, 2),
               ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            '$num',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              color: Colors.black,
+              shadows: [
+                Shadow(
+                  color: Colors.black38,
+                  offset: Offset(1, 1),
+                  blurRadius: 2,
+                ),
+              ],
             ),
-          );
-        }
+          ),
+        );
+      },
+    ),
+  );
+}
 
         Widget buildUserCard(Map<String, dynamic> user) {
           final userNumbers = List<int>.from(user['numbers'] ?? []);
@@ -140,7 +143,7 @@ class PageTwo extends StatelessWidget {
                   ? Row(
                       children: [
                         // Left: Drawn Numbers vertical list
-                        buildDrawnNumbersColumn(),
+                        buildDrawnNumbersGrid(),
 
                         const SizedBox(width: 16),
 

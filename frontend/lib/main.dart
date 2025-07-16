@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Backend Controlled Pages',
+      title: 'Yene Keno ',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const PageControllerScreen(),
     );
@@ -54,7 +54,7 @@ class PageControllerScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Backend Controlled Pages'),
+        title: const Text('Yene Keno Game'),
       ),
       body: buildPage(),
     );
