@@ -22,7 +22,6 @@ class _PageOneState extends State<PageOne> {
 
     final drawnNumbers = context.read<PageProvider>().getDrawnNumbers;
 
-    // Reset animation state if drawn numbers change
     if (drawnNumbers.isNotEmpty) {
       timer?.cancel();
       displayedNumbers.clear();
@@ -39,7 +38,6 @@ class _PageOneState extends State<PageOne> {
         }
       });
     } else {
-      // No drawn numbers, clear display
       setState(() {
         displayedNumbers.clear();
         currentIndex = 0;
@@ -53,27 +51,53 @@ class _PageOneState extends State<PageOne> {
     super.dispose();
   }
 
-  Widget buildGrid() {
+  Widget buildGrid(BuildContext context, double width) {
     final drawnNumbers = context.read<PageProvider>().getDrawnNumbers;
 
+    int crossAxisCount;
+    if (width > 1200) {
+      crossAxisCount = 15;
+    } else if (width > 800) {
+      crossAxisCount = 12;
+    } else if (width > 600) {
+      crossAxisCount = 10;
+    } else {
+      crossAxisCount = 8;
+    }
+
     return GridView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(12),
       itemCount: 80,
-      gridDelegate:
-          const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 10, crossAxisSpacing: 4, mainAxisSpacing: 4),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 6,
+        mainAxisSpacing: 6,
+      ),
       itemBuilder: (context, index) {
         final number = index + 1;
         final isDrawn = displayedNumbers.contains(number);
 
-        return Container(
-          decoration: BoxDecoration(
-            color: isDrawn ? Colors.green : Colors.grey.shade300,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Center(
-            child: Text(
-              number.toString(),
-              style: TextStyle(color: isDrawn ? Colors.white : Colors.black, fontWeight: FontWeight.bold),
+        return Material(
+          color: isDrawn ? Colors.green.shade600 : Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(6),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: () {},
+            hoverColor: Colors.green.shade400.withOpacity(0.5),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                number.toString(),
+                style: TextStyle(
+                  color: isDrawn ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.bold,
+                  fontSize: width > 1200 ? 18 : 14,
+                ),
+              ),
             ),
           ),
         );
@@ -81,27 +105,109 @@ class _PageOneState extends State<PageOne> {
     );
   }
 
+  Widget buildDrawnNumbersPanel(BuildContext context, double width) {
+    return Container(
+      width: width > 1200 ? 250 : 200,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(left: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Drawn Numbers',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade800,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: displayedNumbers
+                    .map((n) => Chip(
+                          label: Text(
+                            n.toString(),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          backgroundColor: Colors.green.shade400,
+                          labelStyle: const TextStyle(color: Colors.white),
+                        ))
+                    .toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final duration = widget.duration;
-    return Column(
-      children: [
-        const SizedBox(height: 12),
-        Text(
-          'Drawn Numbers:',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          children: displayedNumbers.map((n) => Chip(label: Text(n.toString()))).toList(),
-        ),
-        const Divider(),
-        Expanded(child: buildGrid()),
-        const SizedBox(height: 8),
-        Text('Page 1 duration: $duration seconds'),
-        const SizedBox(height: 8),
-      ],
+    final width = MediaQuery.of(context).size.width;
+    final isDesktopLayout = width > 800;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: isDesktopLayout
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left: grid expanded
+                Expanded(child: buildGrid(context, width)),
+                // Right: drawn numbers panel
+                buildDrawnNumbersPanel(context, width),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Drawn Numbers',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade800,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: displayedNumbers
+                      .map((n) => Chip(
+                            label: Text(
+                              n.toString(),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            backgroundColor: Colors.green.shade400,
+                            labelStyle: const TextStyle(color: Colors.white),
+                          ))
+                      .toList(),
+                ),
+                const Divider(height: 32, thickness: 2),
+                Expanded(child: buildGrid(context, width)),
+                const SizedBox(height: 16),
+                Text(
+                  'Page 1 duration: $duration seconds',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+              ],
+            ),
     );
   }
 }
