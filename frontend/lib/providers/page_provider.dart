@@ -4,6 +4,8 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class PageProvider extends ChangeNotifier {
   late IO.Socket socket;
+  bool _isConnected = false;
+bool get isConnected => _isConnected;
 
   int _currentPage = 1;
   int _duration = 10;
@@ -22,7 +24,7 @@ class PageProvider extends ChangeNotifier {
 
   void _connectSocket() {
     socket = IO.io(
-      'http://localhost:3001',
+      'http://192.168.43.119:8001',
       <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': true,
@@ -31,6 +33,8 @@ class PageProvider extends ChangeNotifier {
 
     socket.onConnect((_) {
       print('✅ Connected to backend');
+      
+        _isConnected = true;
     });
 
     socket.on('pageChange', (data) {
@@ -64,6 +68,7 @@ class PageProvider extends ChangeNotifier {
 
     socket.onDisconnect((_) {
       print('❌ Disconnected from backend');
+      _isConnected = false;
     });
   }
 

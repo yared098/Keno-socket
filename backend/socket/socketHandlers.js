@@ -1,4 +1,4 @@
-const { addUser, getUsers } = require('../services/userService');
+const { addUser, getUsers,getUserNumbers } = require('../services/userService');
 const pages = require('../config/pageConfig');
 const { generateDrawnNumbers } = require('../utils/drawUtils');
 
@@ -7,9 +7,12 @@ function setupSocket(io) {
     console.log('✅ Client connected:', socket.id);
 
     const currentPage = pages[0];
+    const numbers=getUsers();
+    console.log(numbers);
     const drawnNumbers = generateDrawnNumbers();
 
     if (currentPage.page === 1) {
+        console.log(numbers);
       socket.emit('pageChange', { ...currentPage, drawnNumbers });
     } else {
       socket.emit('pageChange', currentPage);

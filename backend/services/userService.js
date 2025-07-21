@@ -12,6 +12,10 @@ function addUser(user) {
 function getUsers() {
   return registeredUsers;
 }
+function getUserNumbers() {
+  return registeredUsers.map(user => ({ name: user.name, numbers: user.numbers }));
+}
+
 
 function clearUsers() {
   registeredUsers = [];
@@ -21,4 +25,5 @@ module.exports = {
   addUser,
   getUsers,
   clearUsers,
+  getUserNumbers
 };

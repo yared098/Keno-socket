@@ -164,10 +164,14 @@ const io = socketIO(server, {
     origin: '*',
   },
 });
-
+app.get('/', (req, res) => {
+  res.send('Hello from backend');
+});
 setupSocket(io);
 
-server.listen(3001, () => {
-  console.log('🚀 Server running on http://localhost:3001');
+
+server.listen(8001, '0.0.0.0', () => {
+  console.log('🚀 Server running on http://192.168.43.119:8000');
   emitPageChange(io);
 });
+
