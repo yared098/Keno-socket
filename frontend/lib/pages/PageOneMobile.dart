@@ -17,7 +17,7 @@ class _PageOneState extends State<PageOneMobile> {
   Timer? timer;
   int currentIndex = 0;
   late FlutterTts flutterTts;
-  bool isMuted = false;  // <-- sound state
+  bool isMuted = true;  // <-- sound state
 
   @override
   void initState() {
@@ -195,7 +195,7 @@ class _PageOneState extends State<PageOneMobile> {
           child: const Text(
             '🎉 Win up to 25,000 ETB now!',
             style: TextStyle(
-              color: Colors.white,
+              color: Color.fromARGB(255, 106, 4, 116),
               fontSize: 18,
               fontWeight: FontWeight.bold,
               letterSpacing: 1,
@@ -215,13 +215,13 @@ class _PageOneState extends State<PageOneMobile> {
       backgroundColor: Colors.grey.shade100,
       body: SafeArea(
         child: Container(
-          decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Color.fromARGB(255, 21, 181, 187), Color.fromARGB(255, 211, 126, 14)], // Green gradient
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-    ),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
@@ -234,13 +234,13 @@ class _PageOneState extends State<PageOneMobile> {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
+                      color: Colors.yellow,
                     ),
                   ),
                   IconButton(
                     icon: Icon(
                       isMuted ? Icons.volume_off : Icons.volume_up,
-                      color: Colors.green.shade700,
+                      color: Colors.yellow,
                       size: 28,
                     ),
                     onPressed: toggleMute,

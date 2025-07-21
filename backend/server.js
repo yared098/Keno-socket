@@ -170,7 +170,7 @@ app.get('/', (req, res) => {
 setupSocket(io);
 
 
-server.listen(8001, '0.0.0.0', () => {
+server.listen(8003, '0.0.0.0', () => {
   console.log('🚀 Server running on http://192.168.43.119:8000');
   emitPageChange(io);
 });

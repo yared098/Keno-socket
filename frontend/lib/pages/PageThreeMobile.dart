@@ -1,8 +1,12 @@
 import 'package:desbingo/providers/page_provider.dart';
+import 'package:desbingo/widgets/_fevoriteNumbers.dart';
+import 'package:desbingo/widgets/number_picker_widget.dart';
+import 'package:desbingo/widgets/profile_show_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class PageThreeMobile extends StatefulWidget {
   final int duration;
@@ -14,9 +18,14 @@ class PageThreeMobile extends StatefulWidget {
 
 class _PageThreeMobileState extends State<PageThreeMobile> {
   final TextEditingController _nameController = TextEditingController();
-  List<int> _selectedNumbers = [];
+  final TextEditingController _phoneController = TextEditingController();
+
+  List<List<int>> _favoriteSets = [];
   String? _savedName;
-  List<int>? _savedNumbers;
+  String? _savedPhone;
+  String? _deviceId;
+
+  int? _selectedFavoriteIndex; // <-- Track selected favorite card
 
   @override
   void initState() {
@@ -24,19 +33,42 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
     _loadUserData();
   }
 
+  Future<String> _getDeviceId() async {
+    final deviceInfo = DeviceInfoPlugin();
+    final androidInfo = await deviceInfo.androidInfo;
+    return androidInfo.id;
+  }
+
+  Future<void> _saveDeviceId(String deviceId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('device_id', deviceId);
+  }
+
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final name = prefs.getString('player_name');
-    final numbersString = prefs.getString('player_numbers');
+    final phone = prefs.getString('player_phone');
+    final storedDeviceId = prefs.getString('device_id');
+    final setsString = prefs.getString('favorite_sets');
+
+    if (storedDeviceId == null) {
+      final newId = await _getDeviceId();
+      await _saveDeviceId(newId);
+      setState(() {
+        _deviceId = newId;
+      });
+    } else {
+      setState(() {
+        _deviceId = storedDeviceId;
+      });
+    }
 
     setState(() {
       _savedName = name;
-      if (numbersString != null) {
-        _savedNumbers = List<int>.from(jsonDecode(numbersString));
-        _selectedNumbers = List.from(_savedNumbers!);
-      } else {
-        _savedNumbers = null;
-        _selectedNumbers = [];
+      _savedPhone = phone;
+      if (setsString != null) {
+        final List<dynamic> rawSets = jsonDecode(setsString);
+        _favoriteSets = rawSets.map<List<int>>((e) => List<int>.from(e)).toList();
       }
     });
   }
@@ -49,285 +81,221 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
     });
   }
 
-  Future<void> _saveNumbers(List<int> numbers) async {
+  Future<void> _savePhone(String phone) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('player_numbers', jsonEncode(numbers));
+    await prefs.setString('player_phone', phone);
     setState(() {
-      _savedNumbers = List.from(numbers);
-      _selectedNumbers = List.from(numbers);
+      _savedPhone = phone;
     });
   }
 
-  void _showNameInputDialog() {
-    _nameController.clear();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Enter Player Name'),
-          content: TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(
-              hintText: 'Your name',
-              border: OutlineInputBorder(),
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = _nameController.text.trim();
-                if (name.isNotEmpty) {
-                  _saveName(name);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
+  Future<void> _saveFavoriteSets() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('favorite_sets', jsonEncode(_favoriteSets));
   }
 
-  void _showNumberPicker() {
-    _selectedNumbers = List.from(_savedNumbers ?? []);
+  void _showNumberPicker({int? editIndex}) {
+    List<int> initial = [];
+    if (editIndex != null) {
+      initial = List.from(_favoriteSets[editIndex]);
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-          ),
-          child: SizedBox(
-            height: 320,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Pick up to 10 numbers',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: List.generate(80, (index) {
-                        final number = index + 1;
-                        final isSelected = _selectedNumbers.contains(number);
-                        return ChoiceChip(
-                          label: Text('$number'),
-                          selected: isSelected,
-                          selectedColor: Colors.green,
-                          backgroundColor: Colors.grey[200],
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                if (_selectedNumbers.length < 10) {
-                                  _selectedNumbers.add(number);
-                                }
-                              } else {
-                                _selectedNumbers.remove(number);
-                              }
-                            });
-                          },
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    if (_selectedNumbers.isNotEmpty) {
-                      _saveNumbers(_selectedNumbers);
-                      Navigator.pop(context);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please select at least one number'),
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text('Save Numbers'),
-                ),
-              ],
-            ),
-          ),
+        return NumberPickerWidget(
+          initialSelection: initial,
+          maxPick: 4,
+          onNumbersPicked: (pickedNumbers) async {
+            setState(() {
+              if (editIndex != null) {
+                _favoriteSets[editIndex] = pickedNumbers;
+              } else {
+                _favoriteSets.add(pickedNumbers);
+              }
+            });
+            await _saveFavoriteSets();
+            Navigator.pop(context);
+          },
         );
       },
     );
   }
 
-  Widget _buildRegisterPrompt() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.person_add_alt_1, size: 80, color: Colors.white70),
-        const SizedBox(height: 20),
-        const Text(
-          'No player registered yet.',
-          style: TextStyle(color: Colors.white70, fontSize: 22),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Tap the button below to register your name.',
-          style: TextStyle(color: Colors.white54, fontSize: 16),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 30),
-        ElevatedButton.icon(
-          onPressed: _showNameInputDialog,
-          icon: const Icon(Icons.person_add),
-          label: const Text('Register Name'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.blueAccent,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            textStyle: const TextStyle(fontSize: 16),
-          ),
-        ),
-      ],
+  Widget _buildTopProfileCard() {
+    return ProfileShowWidget(
+      userName: _savedName,
+      phone: _savedPhone,
+      deviceId: _deviceId,
+      balance: 50.0, // or dynamic if you have
     );
   }
 
-  Widget _buildNumberPickerPrompt() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.format_list_numbered, size: 80, color: Colors.white70),
-        const SizedBox(height: 20),
-        Text(
-          'Hello, $_savedName!',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Please pick your numbers to play.',
-          style: TextStyle(color: Colors.white70, fontSize: 18),
-        ),
-        const SizedBox(height: 30),
-        ElevatedButton.icon(
-          onPressed: _showNumberPicker,
-          icon: const Icon(Icons.numbers),
-          label: const Text('Pick Numbers'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.green.shade700,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            textStyle: const TextStyle(fontSize: 16),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRegisteredInfo() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(Icons.check_circle, size: 80, color: Colors.greenAccent),
-        const SizedBox(height: 20),
-        Text(
-          'Registered Player',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.green.shade100,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          '👤 Name: $_savedName',
-          style: const TextStyle(color: Colors.white70, fontSize: 18),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '🎲 Numbers: ${_savedNumbers!.join(', ')}',
-          style: const TextStyle(color: Colors.white70, fontSize: 18),
-        ),
-        const SizedBox(height: 24),
-        ElevatedButton.icon(
-          // onPressed: () {
-          //   ScaffoldMessenger.of(context).showSnackBar(
-          //     const SnackBar(content: Text("Game started!")),
-          //   );
-          // },
-          onPressed: () {
-            if (_savedName != null &&
-                _savedNumbers != null &&
-                _savedNumbers!.isNotEmpty) {
-              final provider = Provider.of<PageProvider>(
-                context,
-                listen: false,
-              );
-              provider.registerUser(_savedName!, _savedNumbers!);
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Game started! Data sent to server."),
-                ),
-              );
-            }
-          },
-
-          icon: const Icon(Icons.play_arrow),
-          label: const Text("Play Now"),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green.shade600,
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-            textStyle: const TextStyle(fontSize: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextButton.icon(
-          onPressed: _showNumberPicker,
-          icon: const Icon(Icons.edit, color: Colors.white70),
-          label: const Text(
-            'Change Numbers',
-            style: TextStyle(color: Colors.white70),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _buildFavoriteCard(List<int> set, int index) {
+  bool isSelected = _selectedFavoriteIndex == index;
+  return FavoriteNumberCard(
+    numbers: set,
+    index: index,
+    backgroundColor: isSelected ? Colors.pinkAccent.withOpacity(0.7) : null,
+    onEdit: (idx) => _showNumberPicker(editIndex: idx),
+    onDelete: (idx) {
+      setState(() {
+        _favoriteSets.removeAt(idx);
+        if (_selectedFavoriteIndex == idx) _selectedFavoriteIndex = null;
+      });
+      _saveFavoriteSets();
+    },
+    onPlay: (idx) {
+      setState(() {
+        _selectedFavoriteIndex = idx;
+      });
+      final provider = Provider.of<PageProvider>(context, listen: false);
+      provider.registerUser(_deviceId!, _favoriteSets[idx]);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Game started with selected numbers!")),
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
+    final hasUserInfo = _savedName != null &&
+        _savedName!.isNotEmpty &&
+        _savedPhone != null &&
+        _savedPhone!.isNotEmpty;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0B3D91),
+      floatingActionButton: hasUserInfo
+          ? FloatingActionButton(
+              onPressed: _showNumberPicker,
+              backgroundColor: Colors.green,
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: _savedName == null
-                ? _buildRegisterPrompt()
-                : (_savedNumbers == null || _savedNumbers!.isEmpty)
-                ? _buildNumberPickerPrompt()
-                : _buildRegisteredInfo(),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
+          padding: const EdgeInsets.all(16),
+          child: hasUserInfo
+              ? Column(
+                  children: [
+                    _buildTopProfileCard(),
+                    Expanded(
+                      child: _favoriteSets.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No favorite sets yet.',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _favoriteSets.length,
+                              itemBuilder: (context, index) => _buildFavoriteCard(_favoriteSets[index], index),
+                            ),
+                    ),
+                  ],
+                )
+              : Center(
+                  child: SingleChildScrollView(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Please Register',
+                            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Name',
+                              labelStyle: TextStyle(color: Colors.white),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white54),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white),
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            decoration: const InputDecoration(
+                              labelText: 'Phone',
+                              labelStyle: TextStyle(color: Colors.white),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white54),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white),
+                              ),
+                            ),
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton(
+                            onPressed: () async {
+                              final name = _nameController.text.trim();
+                              final phone = _phoneController.text.trim();
+
+                              if (name.isEmpty || phone.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Please enter both name and phone')),
+                                );
+                                return;
+                              }
+
+                              // Save data
+                              await _saveName(name);
+                              await _savePhone(phone);
+
+                              if (_deviceId == null) {
+                                final newId = await _getDeviceId();
+                                await _saveDeviceId(newId);
+                                setState(() {
+                                  _deviceId = newId;
+                                });
+                              }
+
+                              // Clear inputs
+                              _nameController.clear();
+                              _phoneController.clear();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.pinkAccent,
+                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: const Text(
+                              'Register',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
         ),
       ),
     );
