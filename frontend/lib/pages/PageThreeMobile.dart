@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:desbingo/providers/UserProvider.dart';
 import 'package:desbingo/providers/page_provider.dart';
 import 'package:desbingo/widgets/_fevoriteNumbers.dart';
@@ -29,11 +31,15 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
   double? account_balance_wallet = 0.0;
 
   int? _selectedFavoriteIndex; // <-- Track selected favorite card
+    late int _secondsRemaining;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _initializeUser();
+    _startCountdown();
+    _secondsRemaining = widget.duration; // ✅ initialize with widget.duration
   }
 
   Future<void> _initializeUser() async {
@@ -72,7 +78,7 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
       'phone': _savedPhone,
       'updated_at': FieldValue.serverTimestamp(),
       'device_id': _deviceId,
-      'balance': 50,
+      'balance': 25,
     };
 
     await FirebaseFirestore.instance
@@ -229,16 +235,7 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
         });
         _saveFavoriteSets();
       },
-      // onPlay: (idx) {
-      //   setState(() {
-      //     _selectedFavoriteIndex = idx;
-      //   });
-      //   final provider = Provider.of<PageProvider>(context, listen: false);
-      //   provider.registerUser(_deviceId!, _favoriteSets[idx]);
-      //   ScaffoldMessenger.of(context).showSnackBar(
-      //     const SnackBar(content: Text("Game started with selected numbers!")),
-      //   );
-      // },
+     
       onPlay: (idx) async {
         if (account_balance_wallet != null && account_balance_wallet! >= 5) {
           await _deductBalance(5); // deduct 5 birr per play
@@ -261,6 +258,29 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
     );
   }
 
+    void _startCountdown() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining <= 0) {
+        timer.cancel();
+      } else {
+        setState(() {
+          _secondsRemaining--;
+        });
+      }
+    });
+  }
+
+   String _formatTime(int seconds) {
+    final mins = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return '$mins:$secs';
+  }
+   @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasUserInfo =
@@ -277,6 +297,7 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
               child: const Icon(Icons.add),
             )
           : null,
+      
       body: SafeArea(
         child: Container(
           decoration: const BoxDecoration(
@@ -419,6 +440,17 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
                     ),
                   ),
                 ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        height: 70,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        color: Colors.grey.shade200,
+        child: Center(
+          child: Text(
+            '⏳ Timer: ${_formatTime(_secondsRemaining)}',
+            style: const TextStyle(fontSize: 16, color: Colors.red),
+          ),
         ),
       ),
     );
