@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileShowWidget extends StatelessWidget {
   final String? userName;
   final String? phone;
   final String? deviceId;
-  final double balance;
+  final double? balance;
   final VoidCallback? onWithdraw;
   final VoidCallback? onDeposit;
 
@@ -13,10 +14,15 @@ class ProfileShowWidget extends StatelessWidget {
     required this.userName,
     this.phone,
     required this.deviceId,
-    this.balance = 50.0,
+    this.balance,
     this.onWithdraw,
     this.onDeposit,
   }) : super(key: key);
+
+  Future<void> _clearSharedPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // 🔥 This removes all stored data
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +44,17 @@ class ProfileShowWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // User name row
+            // ElevatedButton(
+            //   onPressed: () async {
+            //     await _clearSharedPrefs();
+            //     ScaffoldMessenger.of(context).showSnackBar(
+            //       const SnackBar(content: Text('User data cleared!')),
+            //     );
+            //     // Optional: Navigate to registration page again
+            //   },
+            //   style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            //   child: const Text('Clear User Data'),
+            // ),
             Row(
               children: [
                 const Icon(Icons.person, color: Colors.white),
@@ -71,7 +88,7 @@ class ProfileShowWidget extends StatelessWidget {
                 const Icon(Icons.account_balance_wallet, color: Colors.white),
                 const SizedBox(width: 8),
                 Text(
-                  '\$${balance.toStringAsFixed(2)}',
+                  'Balance  ${balance?.toStringAsFixed(2)} ETB',
                   style: const TextStyle(fontSize: 18, color: Colors.white),
                 ),
 

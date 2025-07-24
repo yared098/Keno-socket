@@ -2,22 +2,28 @@ import 'package:desbingo/pages/PageOneMobile.dart';
 import 'package:desbingo/pages/PageThreeMobile.dart';
 import 'package:desbingo/pages/PageTwoMObile.dart';
 import 'package:desbingo/pages/profile_page.dart';
+import 'package:desbingo/providers/UserProvider.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/page_provider.dart';
 
-// Import the pages
-import 'pages/page_one.dart';
-import 'pages/page_two.dart';
-import 'pages/page_three.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();  // Important for plugins
+   await Firebase.initializeApp();
   runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PageProvider()),
+       
     ChangeNotifierProvider(
-      create: (_) => PageProvider(),
+      create: (_)=>Userprovider(),
+    )
+      ],
       child: const MyApp(),
     ),
+   
   );
 }
 

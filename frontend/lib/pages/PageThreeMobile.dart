@@ -1,3 +1,4 @@
+import 'package:desbingo/providers/UserProvider.dart';
 import 'package:desbingo/providers/page_provider.dart';
 import 'package:desbingo/widgets/_fevoriteNumbers.dart';
 import 'package:desbingo/widgets/number_picker_widget.dart';
@@ -7,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PageThreeMobile extends StatefulWidget {
   final int duration;
@@ -24,13 +26,89 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
   String? _savedName;
   String? _savedPhone;
   String? _deviceId;
+  double? account_balance_wallet = 0.0;
 
   int? _selectedFavoriteIndex; // <-- Track selected favorite card
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _initializeUser();
+  }
+
+  Future<void> _initializeUser() async {
+    await _loadUserData(); // ensures _deviceId is set
+    await _loadUserDataFromFirebase(); // safe to fetch balance now
+  }
+
+  Future<void> _loadUserDataFromFirebase() async {
+    if (_deviceId == null) return; // Still good to keep this
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('players')
+          .doc(_deviceId)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data();
+        if (mounted) {
+          setState(() {
+            _savedName = data?['name'];
+            _savedPhone = data?['phone'];
+            account_balance_wallet = (data?['balance'] ?? 0).toDouble();
+          });
+        }
+      }
+    } catch (e) {
+      print('❌ Error fetching user data: $e');
+    }
+  }
+
+  Future<void> _saveUserDataToFirebase() async {
+    if (_deviceId == null) return;
+
+    final playerData = {
+      'name': _savedName,
+      'phone': _savedPhone,
+      'updated_at': FieldValue.serverTimestamp(),
+      'device_id': _deviceId,
+      'balance': 50,
+    };
+
+    await FirebaseFirestore.instance
+        .collection('players')
+        .doc(_deviceId)
+        .set(playerData, SetOptions(merge: true));
+  }
+
+  Future<void> _deductBalance(double amount) async {
+    if (_deviceId == null) return;
+
+    final userRef = FirebaseFirestore.instance
+        .collection('players')
+        .doc(_deviceId);
+
+    try {
+      final doc = await userRef.get();
+      if (doc.exists) {
+        final currentBalance = (doc['balance'] ?? 0).toDouble();
+
+        if (currentBalance >= amount) {
+          final newBalance = currentBalance - amount;
+          await userRef.update({'balance': newBalance});
+          setState(() {
+            account_balance_wallet = newBalance;
+          });
+        } else {
+          // Insufficient balance
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('❌ Not enough balance to play.')),
+          );
+        }
+      }
+    } catch (e) {
+      print("🔥 Failed to deduct balance: $e");
+    }
   }
 
   Future<String> _getDeviceId() async {
@@ -68,7 +146,9 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
       _savedPhone = phone;
       if (setsString != null) {
         final List<dynamic> rawSets = jsonDecode(setsString);
-        _favoriteSets = rawSets.map<List<int>>((e) => List<int>.from(e)).toList();
+        _favoriteSets = rawSets
+            .map<List<int>>((e) => List<int>.from(e))
+            .toList();
       }
     });
   }
@@ -131,40 +211,60 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
       userName: _savedName,
       phone: _savedPhone,
       deviceId: _deviceId,
-      balance: 50.0, // or dynamic if you have
+      balance: account_balance_wallet,
     );
   }
 
   Widget _buildFavoriteCard(List<int> set, int index) {
-  bool isSelected = _selectedFavoriteIndex == index;
-  return FavoriteNumberCard(
-    numbers: set,
-    index: index,
-    backgroundColor: isSelected ? Colors.pinkAccent.withOpacity(0.7) : null,
-    onEdit: (idx) => _showNumberPicker(editIndex: idx),
-    onDelete: (idx) {
-      setState(() {
-        _favoriteSets.removeAt(idx);
-        if (_selectedFavoriteIndex == idx) _selectedFavoriteIndex = null;
-      });
-      _saveFavoriteSets();
-    },
-    onPlay: (idx) {
-      setState(() {
-        _selectedFavoriteIndex = idx;
-      });
-      final provider = Provider.of<PageProvider>(context, listen: false);
-      provider.registerUser(_deviceId!, _favoriteSets[idx]);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Game started with selected numbers!")),
-      );
-    },
-  );
-}
+    bool isSelected = _selectedFavoriteIndex == index;
+    return FavoriteNumberCard(
+      numbers: set,
+      index: index,
+      backgroundColor: isSelected ? Colors.pinkAccent.withOpacity(0.7) : null,
+      onEdit: (idx) => _showNumberPicker(editIndex: idx),
+      onDelete: (idx) {
+        setState(() {
+          _favoriteSets.removeAt(idx);
+          if (_selectedFavoriteIndex == idx) _selectedFavoriteIndex = null;
+        });
+        _saveFavoriteSets();
+      },
+      // onPlay: (idx) {
+      //   setState(() {
+      //     _selectedFavoriteIndex = idx;
+      //   });
+      //   final provider = Provider.of<PageProvider>(context, listen: false);
+      //   provider.registerUser(_deviceId!, _favoriteSets[idx]);
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     const SnackBar(content: Text("Game started with selected numbers!")),
+      //   );
+      // },
+      onPlay: (idx) async {
+        if (account_balance_wallet != null && account_balance_wallet! >= 5) {
+          await _deductBalance(5); // deduct 5 birr per play
+          setState(() {
+            _selectedFavoriteIndex = idx;
+          });
+          final provider = Provider.of<PageProvider>(context, listen: false);
+          provider.registerUser(_deviceId!, _favoriteSets[idx]);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("✅ Game started with selected numbers!"),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("❌ Not enough balance to play.")),
+          );
+        }
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final hasUserInfo = _savedName != null &&
+    final hasUserInfo =
+        _savedName != null &&
         _savedName!.isNotEmpty &&
         _savedPhone != null &&
         _savedPhone!.isNotEmpty;
@@ -201,7 +301,11 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
                             )
                           : ListView.builder(
                               itemCount: _favoriteSets.length,
-                              itemBuilder: (context, index) => _buildFavoriteCard(_favoriteSets[index], index),
+                              itemBuilder: (context, index) =>
+                                  _buildFavoriteCard(
+                                    _favoriteSets[index],
+                                    index,
+                                  ),
                             ),
                     ),
                   ],
@@ -219,7 +323,11 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
                         children: [
                           const Text(
                             'Please Register',
-                            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           TextField(
@@ -260,14 +368,24 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
 
                               if (name.isEmpty || phone.isEmpty) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter both name and phone')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Please enter both name and phone',
+                                    ),
+                                  ),
                                 );
                                 return;
                               }
+                              final provider = Provider.of<Userprovider>(
+                                context,
+                                listen: false,
+                              );
+                              provider.createUser(name, phone!);
 
                               // Save data
                               await _saveName(name);
                               await _savePhone(phone);
+                              await _saveUserDataToFirebase();
 
                               if (_deviceId == null) {
                                 final newId = await _getDeviceId();
@@ -283,14 +401,19 @@ class _PageThreeMobileState extends State<PageThreeMobile> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.pinkAccent,
-                              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 40,
+                                vertical: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                             child: const Text(
                               'Register',
                               style: TextStyle(fontSize: 16),
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
