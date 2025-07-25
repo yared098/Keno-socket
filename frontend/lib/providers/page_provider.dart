@@ -24,7 +24,7 @@ bool get isConnected => _isConnected;
 
   void _connectSocket() {
     socket = IO.io(
-      'http://192.168.43.119:8003',
+      'https://keno-socket.onrender.com/',
       <String, dynamic>{
         'transports': ['websocket'],
         'autoConnect': true,
