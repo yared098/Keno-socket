@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "ethio-game",
+  "private_key_id": "159adb22d95e9560e7e7b529eb2ef60607a782ef",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDe6G9hPaX7FcBW\nOlbbEpSOrrUY9wkWWxjFMwMsRaSmj+k9KVP4vh7QPLwzEpBZhQ8uQLr6OvJpx1VY\noIbNPjRKKxFErKHO5foc2oX7ckOMLJih3siL50zkIbXMuOAhOswYnVVoIW6xa590\niNYDVl0wCikDViZOH+SATMA/YyJAUVbdUISWEKl/nN+HZIqoClRilmRT5CIgQ3ev\nq/vp269W8QtsWxBvP3fHbU9wQv2vulbfvB1sRgOB/wfWXOQJQKwIvnbHAt8RJf5E\nhsTpMnjpFeiXUUtT21nkKqMbimoFCb6UGc7HSJTk4JxgzupftPDvsCg6XW1wGuen\nsGFIV9BNAgMBAAECggEAEb6NBz+iE9/CZNrWCTBsdQNBVVBs/8OWsDQEX6TXm46/\nMWg10ApKZ6c+EA69QPMPp03t1HeWzobYq2pz8Kiv/ut4v2/Cnba+90cJ/V82M1Vl\nfRU//6sU+uAYGcjpxptondkAcH6g0izQD7XI25Enb+iPJT3ZZMSzKudxMlqQ4m+x\nGHakDKwYJvR/4rdmgJ5xC/5pn0vuPlHT0bMtTnOfpPseEOvo+SHkdW1Iaaq98Tw0\nGfECPLv5llpdlVrujzWgb0i8NYPUOdv01uiOEn2uW7ZbGNgvTiKHJGpuYD5BA3CY\n+kcVj1ws3MICTmJHreaSZbgF0z9piFeNo/TGDP4hHQKBgQD6YIaP/jrzv1q4Oq2Z\nenD7gdMLqrX84i2MK5mOybjNUB1DHGl3JGgODgkXJCXQcDj/s229nnGM4UnYdMCq\no/W+eWeyCIydP12UayMgus4m0wK4Xii34e7V4pbWZnVDl69sZqYq26MA/f2+u8Cz\noI4GzT4FkfUKSZdbgrtXQK00fwKBgQDj6fu8lqZqLiTdyBzNKNeJJE92BOooE4nE\nrOYQ/VlMFkvOZSSvqpWUpSNbVgTCRpz/6zvEjty9kUC+iH9skbE1QY3Zr0weTs4e\n08ad/wCE2s/firMYHZSE19bjlxHZjIgVSZDk6ro5tsEmvYNK5946Dk5vPk5Xe9fN\nVXeqAsAlMwKBgCVeBJc29SttsqduMnyGdphCvvGtz61nQC78TtWtq4QQ4d0jP2ZF\nq7X1SEwI3A/ov8kByW4UWJQTB4djnWGaSNHdoqlCd2H8lAXTm5GF78CBm5VSkDcp\nZBDN2X80GWo2GDtQcppQ31oFjjpKIS9t1eST+x6vsuePJiTFNRqHj5IXAoGBANsU\nrwQwOBV2978sverEKLNOcQd8X+1YIqUoohqQvgayo/npJaOqsRBq0RraC8cIA6DJ\naPFfdnbOqlK8eOhO/+22bvliVSQJEn91iMWVOtV6VDmIZPF4daxgodKyA9mACcuU\npLA3pf0WXIK1xv/49JgP6ntqg/n6NI3PazDEZhkbAoGBALAf3cI4s23EzXwcCO0f\nMNE0+WRAE+J+8obYMlXi6NtknTduEDY9erL/3lSSbM4tqWHVpVgPlaUeHhXYqalY\nffWEhNV/K6bEXsBDat5EGDqYlsIGF8eCD0fDPXukkrpbVUqRfsxQCcRQ2Lvsy4UP\nu4qOQ8NMCy64dli0IpbAvnQh\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-fbsvc@ethio-game.iam.gserviceaccount.com",
+  "client_id": "118110816940306730241",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40ethio-game.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
