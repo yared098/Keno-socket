@@ -1,6 +1,6 @@
 const { addUser, getUsers,getUserNumbers } = require('../services/userService');
 const pages = require('../config/pageConfig');
-const { generateDrawnNumbers } = require('../utils/drawUtils');
+// const { generateDrawnNumbers } = require('../utils/drawUtils');
 
 function setupSocket(io) {
   io.on('connection', (socket) => {
@@ -9,7 +9,16 @@ function setupSocket(io) {
     const currentPage = pages[0];
     const numbers=getUsers();
     console.log(numbers);
-    const drawnNumbers = generateDrawnNumbers();
+    // const drawnNumbers = generateDrawnNumbers();
+    const { generateProfitableNumbers } = require('../utils/generateProfitableNumbers');
+    const { getUserNumbers } = require('../services/userService');
+
+    const result = generateProfitableNumbers(getUserNumbers());
+    const drawnNumbers = result.drawnNumbers;
+    const winners = result.winners;
+
+    pageData.drawnNumbers = drawnNumbers;
+    pageData.winners = winners;
 
     if (currentPage.page === 1) {
         console.log(numbers);
